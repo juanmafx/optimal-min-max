@@ -1,20 +1,20 @@
 # py_low_hig
 
-A small, fully tested Python command-line tool and library that finds the minimum and maximum of a stream of integers using the provably optimal number of comparisons.
+A small, fully tested Python command-line tool and library that finds the minimum and maximum of a stream of integers using the worst-case optimal number of comparisons.
 
 > **Project history:** originally created in 2019 as a single-file exercise, modernized in 2026.
 
 ## Purpose
 
-Given integers one at a time, report the smallest and largest seen so far, in constant memory and without knowing the length of the input in advance.
+Given integers one at a time, report the smallest and largest seen so far, storing at most three integers and without knowing the length of the input in advance.
 
 ## Why this project exists
 
-The original script was a learning exercise in loops, input validation, and tracking state. This version keeps its observable behavior for valid sessions and uses the same tiny problem to demonstrate algorithm analysis, property-based testing, reproducible experiments, and disciplined packaging. It is a study project and is not presented as production software.
+The original script was a learning exercise in loops, input validation, and tracking state. This version keeps the original output for sessions with at least one valid integer, apart from the input limits and error handling listed in the [changelog](CHANGELOG.md), and uses the same tiny problem to demonstrate algorithm analysis, property-based testing, reproducible experiments, and disciplined packaging. It is a study project and is not presented as production software.
 
 ## What it does
 
-- **Interactive mode:** prompts for integers until `done` or end of input, skips invalid entries, then prints the maximum and minimum.
+- **Interactive mode:** prompts for integers until `done` or end of input, skips invalid entries (including undecodable bytes and lines over 4,096 characters), then prints the maximum and minimum.
 - **Sample mode:** generates a seeded uniform integer sample and reports its extrema, the comparisons used, and the comparisons a naive scan would use.
 - **Library:** exposes `find_extrema` and the incremental `StreamingExtrema` tracker.
 
@@ -96,14 +96,14 @@ There are no environment variables or configuration files. `sample` accepts:
 | Option | Default | Meaning |
 | --- | --- | --- |
 | `--count` | required | Sample size, from 1 to 10,000,000 |
-| `--low` | `0` | Inclusive lower bound |
-| `--high` | `1000000` | Inclusive upper bound |
-| `--seed` | `0` | Pseudorandom seed |
+| `--low` | `0` | Inclusive lower bound, at most 4,096 characters |
+| `--high` | `1000000` | Inclusive upper bound, at most 4,096 characters |
+| `--seed` | `0` | Non-negative pseudorandom seed, at most 4,096 characters |
 | `--json` | off | Emit a JSON object |
 
 ## Database (optional)
 
-The application does not use a database and runs without one. [db/schema.sql](db/schema.sql) is an optional SQLite schema for anyone who wants to store sample run results:
+The application does not use a database and runs without one. [db/schema.sql](db/schema.sql) is an optional SQLite schema for anyone who wants to store sample run results. It uses `STRICT` tables, which require SQLite 3.37 or newer:
 
 ```bash
 sqlite3 runs.sqlite < db/schema.sql
@@ -123,10 +123,10 @@ The suite covers unit behavior, algebraic properties with Hypothesis, a seeded c
 
 ## Security notes
 
-The tool opens no network connections, reads no files at runtime, and stores no data. Input tokens are length-bounded and invalid input is never echoed. The seeded generator is for reproducible experiments and must not be used for anything security-sensitive. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md).
+The tool opens no network connections, reads no files at runtime, and stores no data. Piped input is read in bounded chunks, so an oversized line is discarded without being held in memory. Terminal input uses Python's `input`, so this memory bound applies to piped input only; the same 4,096-character check still applies before conversion. Invalid interactive input and rejected numeric options are never echoed. The seeded generator is for reproducible experiments and must not be used for anything security-sensitive. See [SECURITY.md](SECURITY.md) and [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md).
 
 ## Attribution and license
 
-The original script closely resembles the "largest and smallest number" exercise from *Python for Everybody* by Charles Severance ([py4e.com](https://www.py4e.com/)). The repository does not record its source, so treat the original program as likely course-derived. The pairwise method is a standard algorithm, described in *Introduction to Algorithms* (Cormen, Leiserson, Rivest, Stein), and its lower bound is due to Ira Pohl (1972).
+The original script closely resembles Exercise 2 of Chapter 5 ("Iterations") of *Python for Everybody* by Charles Severance ([py4e.com](https://www.py4e.com/html3/05-iterations)), which asks for a program that prints the maximum and minimum of entered numbers. The repository does not record its source, so treat the original program as likely course-derived. The pairwise method is a standard algorithm, described in *Introduction to Algorithms* (Cormen, Leiserson, Rivest, Stein), and its lower bound is due to Ira Pohl (1972).
 
 The repository has no license file, so no open-source license is granted.

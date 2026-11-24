@@ -1,3 +1,4 @@
+import io
 import json
 import runpy
 
@@ -5,6 +6,21 @@ import pytest
 
 from py_low_hig import __version__
 from py_low_hig.cli.main import INTERRUPTED_EXIT_CODE, MAX_SAMPLE_COUNT, main
+from py_low_hig.cli.session import PROMPT
+from py_low_hig.parsing.tokens import MAX_TOKEN_LENGTH
+
+
+class _TerminalInput(io.StringIO):
+    def isatty(self) -> bool:
+        return True
+
+
+class _InterruptedInput:
+    def isatty(self) -> bool:
+        return False
+
+    def readline(self, _size: int = -1, /) -> str:
+        raise KeyboardInterrupt
 
 
 def test_version(capsys: pytest.CaptureFixture[str]) -> None:
@@ -18,17 +34,34 @@ def test_version(capsys: pytest.CaptureFixture[str]) -> None:
 def test_interactive_modes(
     argv: list[str], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    tokens = iter(["4", "9", "done"])
-    monkeypatch.setattr("builtins.input", lambda _prompt: next(tokens))
+    monkeypatch.setattr("sys.stdin", io.StringIO("4\n9\ndone\n"))
     assert main(argv) == 0
+    assert capsys.readouterr().out == f"{PROMPT * 3}Maximum is 9\nMinimum is 4\n"
+
+
+def test_terminal_input_uses_builtin_input(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    tokens = iter(["4", "9", "done"])
+    monkeypatch.setattr("sys.stdin", _TerminalInput())
+    monkeypatch.setattr("builtins.input", lambda _prompt: next(tokens))
+    assert main([]) == 0
     assert capsys.readouterr().out == "Maximum is 9\nMinimum is 4\n"
 
 
-def test_keyboard_interrupt_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
-    def interrupt(_prompt: str) -> str:
-        raise KeyboardInterrupt
+def test_undecodable_stdin_is_reported_as_invalid(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    raw = io.BytesIO(b"5\n\xff\n9\ndone\n")
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(raw, encoding="utf-8"))
+    assert main([]) == 0
+    assert capsys.readouterr().out == (
+        f"{PROMPT * 2}Invalid input\n{PROMPT * 2}Maximum is 9\nMinimum is 5\n"
+    )
 
-    monkeypatch.setattr("builtins.input", interrupt)
+
+def test_keyboard_interrupt_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("sys.stdin", _InterruptedInput())
     assert main([]) == INTERRUPTED_EXIT_CODE
 
 
@@ -59,6 +92,10 @@ def test_sample_text_output(capsys: pytest.CaptureFixture[str]) -> None:
         ["sample", "--count", str(MAX_SAMPLE_COUNT + 1)],
         ["sample", "--count", "abc"],
         ["sample", "--count", "1", "--low", "2", "--high", "1"],
+        ["sample", "--count", "1", "--low", "9" * (MAX_TOKEN_LENGTH + 1)],
+        ["sample", "--count", "1", "--high", "9" * (MAX_TOKEN_LENGTH + 1)],
+        ["sample", "--count", "1", "--seed", "9" * (MAX_TOKEN_LENGTH + 1)],
+        ["sample", "--count", "1", "--seed", "-5"],
     ],
 )
 def test_sample_rejects_invalid_arguments(argv: list[str]) -> None:

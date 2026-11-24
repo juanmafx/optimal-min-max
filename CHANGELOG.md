@@ -18,12 +18,16 @@ First versioned release, prepared on 2026-11-23.
 
 - **Breaking:** `hi_low.py` is replaced by `py-low-hig` and `python -m py_low_hig`.
 - **Breaking:** a session with no valid numbers prints `No numbers were entered.` instead of `Maximum is None` and `Minimum is None`.
+- **Breaking:** input tokens longer than 4,096 characters are invalid, including integers the original script accepted.
 - Closed standard input now finishes the session instead of raising `EOFError`.
+- Undecodable input bytes are reported as invalid instead of ending the session with a traceback.
+- `sample` rejects negative seeds, because Python seeds `n` and `-n` produce the same stream.
 
 ### Security
 
 - Replaced the bare `except` with a specific `ValueError` handler.
-- Limited input tokens to 4,096 characters.
+- Limited input tokens and numeric `sample` options to 4,096 characters.
+- Piped input is read in bounded chunks, so oversized lines no longer grow memory use.
 
 ## Original script - 2019
 

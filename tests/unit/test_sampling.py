@@ -15,3 +15,8 @@ def test_different_seed_different_sequence() -> None:
 def test_invalid_arguments_fail_eagerly(count: int, low: int, high: int) -> None:
     with pytest.raises(ValueError, match="must not"):
         uniform_integers(count, low, high, 0)
+
+
+def test_negative_seed_is_rejected() -> None:
+    with pytest.raises(ValueError, match="seed must not be negative"):
+        uniform_integers(1, 0, 1, -5)

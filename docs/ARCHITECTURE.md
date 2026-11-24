@@ -3,7 +3,7 @@
 ## Design goals
 
 1. Keep the algorithm independent of input and output.
-2. Use constant memory for any stream length.
+2. Store at most three integers for any stream length.
 3. Make each result reproducible and each claim testable.
 4. Keep the runtime free of third-party dependencies.
 
@@ -21,6 +21,7 @@ src/py_low_hig/
   sampling/
     uniform.py         seeded uniform integer stream
   cli/
+    line_reader.py     bounded reader for piped standard input
     session.py         interactive loop with injected input and output
     main.py            argument parsing and command dispatch
 ```
@@ -57,6 +58,10 @@ That is three comparisons per two values. `StreamingExtrema` holds at most one u
 Comparison counts are exact for every input. `ceil(3n / 2) - 2` matches Pohl's 1972 lower bound for finding both extrema by comparisons, so no comparison-based algorithm has a better worst case.
 
 Python integers have arbitrary precision, so the cost of one comparison grows with operand size. The O(1) entries count comparisons and stored values rather than bit operations. Fewer comparisons also do not guarantee lower wall-clock time in CPython, and this project makes no speed claim.
+
+## Input limits
+
+Piped standard input is read through `bounded_line_reader`, which requests at most 4,098 characters per line and discards the rest of an oversized line in 64 KiB chunks. Terminal input uses Python's `input`, so the chunked memory bound does not apply there, although the 4,096-character check still does. Undecodable bytes are replaced before parsing, so they count as invalid input. Library callers can pass integers of any size, so memory there is bounded by the values supplied.
 
 ## Verification strategy
 
