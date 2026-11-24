@@ -1,21 +1,14 @@
-# Release Notes: 1.0.0
+# Release Notes: 1.0.1
 
-Status: prepared, not tagged or released.
+Released 2026-11-24.
 
-This release turns the 2019 single-file exercise into a typed, tested Python package that finds integer extrema with the optimal number of comparisons.
-
-## Highlights
-
-- Streaming that stores at most three integers, with exact comparison accounting.
-- Reproducible seeded samples.
-- Property-based and statistical tests.
-- No runtime dependencies.
+This is a documentation-only patch release. The release notes and changelog now reflect that 1.0.0 was published on 2026-11-24. No code behaviour changed.
 
 ## Upgrade notes
 
-Replace `python hi_low.py` with `uv run py-low-hig`. Sessions with at least one valid integer keep the same output, except that tokens over 4,096 characters are now invalid and undecodable bytes are reported as invalid instead of crashing. A session with no valid numbers now prints `No numbers were entered.`
+No action is needed when upgrading from 1.0.0. Python 3.12 or newer is required.
 
-Python 3.12 or newer is required.
+See the [changelog](CHANGELOG.md) for the full 1.0.0 feature list and breaking changes from the 2019 script.
 
 ## Verification
 
