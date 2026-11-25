@@ -1,4 +1,4 @@
-# py_low_hig
+# optimal-min-max
 
 A small, fully tested Python command-line tool and library that finds the minimum and maximum of a stream of integers using the worst-case optimal number of comparisons.
 
